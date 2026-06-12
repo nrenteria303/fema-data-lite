@@ -4,6 +4,22 @@ export interface DatasetDistribution {
   datasetSize: string;
 }
 
+export interface EntitySchemaFieldDefinition {
+  type: string;
+  element: string;
+  label?: string;
+  useIfNull?: string;
+  format?: string;
+}
+
+export interface EntitySchema {
+  [fieldPath: string]: EntitySchemaFieldDefinition;
+}
+
+export interface EntityRecordSchema {
+  entities: Record<string, EntitySchema>;
+}
+
 export interface OpenFemaDataset {
   id: string;
   identifier: string;

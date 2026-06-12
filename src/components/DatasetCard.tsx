@@ -1,42 +1,47 @@
-import { type OpenFemaDataset } from "../api/types";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
-import "./DatasetCard.css"
+import { type EntityRecordSchema, type OpenFemaDataset } from "../api/types";
+import entityRecordSchema from "../schemata/entity-record-schema.json";
+
+import "./DatasetCard.css";
 
 interface DatasetCardProps {
   dataset: OpenFemaDataset;
 }
 
 export function DatasetCard({ dataset }: DatasetCardProps) {
+  const recordsAvailable = useMemo(() => {
+    const schema = entityRecordSchema as EntityRecordSchema;
+    return Boolean(schema.entities[dataset.name]);
+  }, [dataset.name]);
+
   return (
     <Link
-        to={`/datasets/${dataset.name}`}
-        state={{ dataset }}
-        style={{
-            textDecoration: "none",
-            color: "inherit",
-        }}
+      to={`/datasets/${dataset.name}`}
+      state={{ dataset }}
+      style={{
+        textDecoration: "none",
+        color: "inherit",
+      }}
     >
-        <article
-            className="dataset-card"
-        >
-            <h2>{dataset.title}</h2>
+      <article className="dataset-card">
+        <h2>{dataset.title}</h2>
 
-            <p>
-                <strong>Theme:</strong> {dataset.theme}
-            </p>
+        <p>
+          <strong>Theme:</strong> {dataset.theme}
+        </p>
 
-            <p>
-                <strong>Records:</strong> {dataset.recordCount?.toLocaleString()}
-            </p>
+        <p>
+          <strong>Records:</strong> {dataset.recordCount?.toLocaleString()}
+        </p>
 
-            <p>
-                <strong>Dataset Searchable:</strong> {dataset.api ? "Yes" : "No"}
-            </p>
+        <p>
+          <strong>Records Available to View:</strong> {recordsAvailable ? "Yes" : "No"}
+        </p>
 
-            <p>{dataset.description.slice(0, 250)}...</p>
-
-        </article>
+        <p>{dataset.description.slice(0, 250)}...</p>
+      </article>
     </Link>
   );
 }

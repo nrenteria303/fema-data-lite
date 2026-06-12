@@ -77,9 +77,11 @@ export function SearchPage() {
         padding: "24px",
       }}
     >
-      <h1>OpenFEMA Explorer</h1>
+      <h1>FEMA Data Lite</h1>
 
-      <p>Browse FEMA datasets available through OpenFEMA.</p>
+      <p style={{ marginBottom: "16px" }}>
+        Browse FEMA datasets available through OpenFEMA. Click on the dataset cards below to view more details, and even browse through their related records. 
+      </p>
 
       <SearchFilters
         filters={filters}
@@ -88,7 +90,7 @@ export function SearchPage() {
         publishers={publishers}
       />
 
-      <p>
+      <p style={{ marginBottom: "16px" }}>
         Showing {filteredDatasets.length} of {datasets.length} datasets
       </p>
 

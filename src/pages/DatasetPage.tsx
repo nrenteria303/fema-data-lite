@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import type { OpenFemaDataset } from "../api/types";
+import type { EntityRecordSchema, OpenFemaDataset } from "../api/types";
+import entityRecordSchema from "../schemata/entity-record-schema.json";
 import { useDatasets } from "../hooks/useDatasets";
 
 import './DatasetPage.css'
@@ -10,6 +11,11 @@ export function DatasetPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
   const location = useLocation();
   const { data, isLoading, error } = useDatasets();
+
+  useEffect(() => {
+    // Scroll to the top when the component mounts
+    window.scrollTo(0, 0);
+  }, []);
 
   const dataset = useMemo(() => {
     const routedDataset = (location.state as { dataset?: OpenFemaDataset } | null)?.dataset;
@@ -20,6 +26,11 @@ export function DatasetPage() {
 
     return data?.OpenFemaDataSets?.find((item) => item.name === datasetName);
   }, [data?.OpenFemaDataSets, datasetName, location.state]);
+  
+  const recordsAvailable = useMemo(() => {
+    const schema = entityRecordSchema as EntityRecordSchema;
+    return Boolean(dataset && schema.entities[dataset.name]);
+  }, [dataset]);
 
   if (isLoading) {
     return (
@@ -65,10 +76,10 @@ export function DatasetPage() {
         <strong>Records:</strong> {dataset.recordCount?.toLocaleString()}
       </p>
       <p>
-        <strong>Dataset Searchable:</strong> {dataset.api ? "Yes" : "No"}
+        <strong>Records available to view:</strong> {recordsAvailable ? "Yes" : "No"}
       </p>
 
-      {dataset.api && (
+      {recordsAvailable && (
         <p style={{ marginBlock: "16px" }}>
           <Link to={`/records/${dataset.name}`} state={{ dataset }}>
             View records in {dataset.title}
@@ -78,10 +89,15 @@ export function DatasetPage() {
 
       <div
         dangerouslySetInnerHTML={{ __html: dataset.description as string }}
-        style={{ marginBottom: "16px" }}
+        style={{ marginBlock: "16px" }}
       />
-      <a style={{ marginBottom: "16px", display: "block" }} href={dataset.dataDictionary} target="_blank" rel="noreferrer">
-            View Documentation
+      <a
+        style={{ marginBottom: "16px", display: "block" }}
+        href={dataset.dataDictionary}
+        target="_blank"
+        rel="noreferrer"
+      >
+        View Documentation
       </a>
       {dataset.distribution?.length > 0 && (
         <section>
