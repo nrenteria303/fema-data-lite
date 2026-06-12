@@ -5,5 +5,6 @@ export function useDatasets() {
   return useQuery({
     queryKey: ["datasets"],
     queryFn: getDatasets,
+    staleTime: 1000 * 60 * 5,
   });
 }
