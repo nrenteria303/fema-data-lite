@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
+import type { OpenFemaDataset } from "../../api/types";
 import entityRecordSchema from "../../schemata/entity-record-schema.json";
 import { Pagination } from "../../components/Pagination";
 
+import "./RecordsPage.css";
+
 const PAGE_SIZE = 25;
-const BASE_URL = "https://www.fema.gov/api/open/v1";
+const BASE_URL = "https://www.fema.gov/api/open";
 
 interface SchemaFieldDefinition {
   type: string;
   element: string;
   label?: string;
+  useIfNull?: string;
+  format?: string;
 }
 
 interface SchemaEntity {
@@ -40,6 +45,54 @@ function getFieldValue(record: Record<string, unknown>, fieldPath: string) {
   return current;
 }
 
+function getFieldValueWithFallback(record: Record<string, unknown>, fieldPath: string, fallbackPaths?: string) {
+  const primaryValue = getFieldValue(record, fieldPath);
+
+  if (primaryValue != null && primaryValue !== "") {
+    return primaryValue;
+  }
+
+  if (!fallbackPaths) {
+    return primaryValue;
+  }
+
+  for (const fallbackPath of fallbackPaths.split("|")) {
+    const fallbackValue = getFieldValue(record, fallbackPath.trim());
+
+    if (fallbackValue != null && fallbackValue !== "") {
+      return fallbackValue;
+    }
+  }
+
+  return primaryValue;
+}
+
+function getPayloadRecords(data: unknown, datasetName?: string, webService?: string) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (!data || typeof data !== "object") {
+    return [];
+  }
+
+  const recordPayload = data as Record<string, unknown>;
+
+  if (datasetName && Array.isArray(recordPayload[datasetName])) {
+    return recordPayload[datasetName] as Record<string, unknown>[];
+  }
+
+  if (webService) {
+    const endpointName = webService.split("/").filter(Boolean).pop();
+
+    if (endpointName && Array.isArray(recordPayload[endpointName])) {
+      return recordPayload[endpointName] as Record<string, unknown>[];
+    }
+  }
+
+  return [];
+}
+
 function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
   if (value == null || value === "") {
     return null;
@@ -49,15 +102,52 @@ function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
     return <div dangerouslySetInnerHTML={{ __html: String(value) }} />;
   }
 
+  if (definition.type === "iso" && typeof value === "string" && definition.format) {
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+      const formatters = definition.format
+        .split(" ")
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+
+      const parts = formatters.map((formatter) => {
+        const [methodName, ...args] = formatter.split("(");
+        const normalizedArgs = args.join("(")
+          .replace(/\)$/, "")
+          .split(",")
+          .map((arg) => arg.trim())
+          .filter(Boolean);
+
+        if (methodName === "toLocaleDateString") {
+          return date.toLocaleDateString(normalizedArgs[0] ?? "en-US");
+        }
+
+        if (methodName === "toLocaleTimeString") {
+          return date.toLocaleTimeString(normalizedArgs[0] ?? "en-US");
+        }
+
+        return "";
+      });
+
+      return <span>{parts.join(" ")}</span>;
+    }
+  }
+
   return <span>{String(value)}</span>;
 }
 
 export function RecordsPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
+  const location = useLocation();
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const dataset = useMemo(() => {
+    return (location.state as { dataset?: OpenFemaDataset } | null)?.dataset;
+  }, [location.state]);
 
   const entitySchema = useMemo(() => {
     const schema = entityRecordSchema.entities as Record<string, SchemaEntity>;
@@ -66,8 +156,6 @@ export function RecordsPage() {
 
   useEffect(() => {
     if (!datasetName) {
-      setError("No dataset selected.");
-      setIsLoading(false);
       return;
     }
 
@@ -77,14 +165,18 @@ export function RecordsPage() {
         setError("");
 
         const skip = (page - 1) * PAGE_SIZE;
-        const response = await fetch(`${BASE_URL}/${datasetName}?$top=${PAGE_SIZE}&$skip=${skip}`);
+        const requestUrl = dataset?.webService
+          ? `${dataset.webService}?$top=${PAGE_SIZE}&$skip=${skip}`
+          : `${BASE_URL}/v1/${datasetName}?$top=${PAGE_SIZE}&$skip=${skip}`;
+        const response = await fetch(requestUrl);
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
         const data = await response.json();
-        setRecords(Array.isArray(data) ? data : data?.[datasetName] ?? []);
+        const payload = getPayloadRecords(data, datasetName, dataset?.webService);
+        setRecords(Array.isArray(payload) ? payload : []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load records.");
       } finally {
@@ -93,12 +185,12 @@ export function RecordsPage() {
     }
 
     fetchRecords();
-  }, [datasetName, page]);
+  }, [datasetName, dataset?.webService, page]);
 
   return (
     <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
-      <Link to="/">Back to datasets</Link>
-      <h1>{datasetName ?? "Records"}</h1>
+      <Link to={`/datasets/${datasetName}`}>Back to dataset</Link>
+      <h1>{dataset?.title ?? "Records"}</h1>
       <p>Browsing records from the selected dataset.</p>
 
       {isLoading && <p>Loading records...</p>}
@@ -113,7 +205,7 @@ export function RecordsPage() {
           <article key={`${record.id ?? index}`} style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "16px" }}>
             {entitySchema &&
               Object.entries(entitySchema).map(([fieldPath, definition]) => {
-                const value = getFieldValue(record, fieldPath);
+                const value = getFieldValueWithFallback(record, fieldPath, definition.useIfNull);
                 const renderedValue = renderFieldValue(value, definition);
 
                 if (!renderedValue) {

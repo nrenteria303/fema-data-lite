@@ -4,6 +4,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import type { OpenFemaDataset } from "../api/types";
 import { useDatasets } from "../hooks/useDatasets";
 
+import './DatasetPage.css'
+
 export function DatasetPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
   const location = useLocation();
@@ -21,7 +23,8 @@ export function DatasetPage() {
 
   if (isLoading) {
     return (
-      <main style={{ maxWidth: "960px", margin: "0 auto", padding: "24px" }}>
+      <main className="dataset-detail__main">
+        <Link to="/">Back to datasets</Link>
         <h1>Loading dataset...</h1>
       </main>
     );
@@ -29,7 +32,8 @@ export function DatasetPage() {
 
   if (error) {
     return (
-      <main style={{ maxWidth: "960px", margin: "0 auto", padding: "24px" }}>
+      <main className="dataset-detail__main">
+        <Link to="/">Back to datasets</Link>
         <h1>Error loading dataset.</h1>
       </main>
     );
@@ -37,14 +41,16 @@ export function DatasetPage() {
 
   if (!dataset) {
     return (
-      <main style={{ maxWidth: "960px", margin: "0 auto", padding: "24px" }}>
+      <main className="dataset-detail__main">
+        <Link to="/">Back to datasets</Link>
         <h1>Dataset not found.</h1>
       </main>
     );
   }
 
   return (
-    <main style={{ maxWidth: "960px", margin: "0 auto", padding: "24px" }}>
+    <main className="dataset-detail__main">
+      <Link to="/">Back to datasets</Link>
       <h1>{dataset.title}</h1>
       <p>
         <strong>Dataset name:</strong> {dataset.name}
@@ -64,7 +70,10 @@ export function DatasetPage() {
 
       {dataset.api && (
         <p style={{ marginBlock: "16px" }}>
-          <Link to={`/records/${dataset.name}`}>
+          <Link
+            to={`/records/${dataset.name}`}
+            state={{ dataset }}
+          >
             View records in {dataset.title}
           </Link>
         </p>

@@ -19,6 +19,211 @@
                 "element": "p",
                 "label": "Sender"
             }
+        },
+        "NfipCommunityLayerComprehensive": {
+            "alternateLongName": {
+                "type": "string",
+                "element": "h3",
+                "useIfNull": "alternateName|communityName|communityNameShort"
+            },
+            "censusPopulationEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Population"
+            },
+            "landAreaEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Area"
+            }
+        },
+        "NfipCommunityLayerNoOverlapsSplit": {
+            "alternateLongName": {
+                "type": "string",
+                "element": "h3",
+                "useIfNull": "alternateName|communityName|communityNameShort"
+            },
+            "censusPopulationEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Population"
+            },
+            "landAreaEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Area"
+            }
+        },
+        "NfipCommunityLayerNoOverlapsWhole": {
+            "alternateLongName": {
+                "type": "string",
+                "element": "h3",
+                "useIfNull": "alternateName|communityName|communityNameShort"
+            },
+            "censusPopulationEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Population"
+            },
+            "landAreaEntire": {
+                "type": "number",
+                "element": "p",
+                "label": "Area"
+            }
+        },
+        "HmaSubapplicationsCongressionalDistricts": {
+            "districtName": {
+                "type": "string",
+                "element": "h3"
+            },
+            "subapplicationIdentifier": {
+                "type": "string",
+                "element": "p"
+            }
+        },
+        "DisasterDeclarationsSummaries": {
+            "incidentType": {
+                "type": "string",
+                "element": "p"
+            },
+            "declarationTitle": {
+                "type": "string",
+                "element": "h3"
+            },
+            "designatedArea": {
+                "type": "string",
+                "element": "p"
+            },
+            "incidentBeginDate": {
+                "type": "iso",
+                "element": "p",
+                "label": "Begin Date",
+                "format": "toLocaleDateString() toLocaleTimeString()"
+            },
+            "incidentEndDate": {
+                "type": "iso",
+                "element": "p",
+                "label": "End Date",
+                "format": "toLocaleDateString() toLocaleTimeString()"
+            }
+        },
+        "HmaSubapplicationsFinancialTransactions": {
+            "transactionType": {
+                "type": "string",
+                "element": "p"
+            },
+            "subapplicationIdentifier": {
+                "type": "string",
+                "element": "h3"
+            },
+            "transactionDate": {
+                "type": "iso",
+                "element": "p",
+                "label": "Transaction Date",
+                "format": "toLocaleDateString()"
+            }
+        },
+        "IndividualAssistanceHousingRegistrantsLargeDisasters": {
+            "disasterNumber": {
+                "type": "string",
+                "element": "p",
+                "label": "Disaster Number"
+            },
+            "damagedCity": {
+                "type": "string",
+                "element": "h3"
+            },
+            "damagedStateAbbreviation": {
+                "type": "string",
+                "element": "p"
+            }
+        },
+        "HazardMitigationGrantProgramDisasterSummaries": {
+            "incidentType": {
+                "type": "string",
+                "element": "p"
+            },
+            "title": {
+                "type": "string",
+                "element": "h3"
+            },
+            "state": {
+                "type": "string",
+                "element": "p"
+            },
+            "disasterDueDateForNewApps": {
+                "type": "iso",
+                "element": "p",
+                "label": "Due Date for New Applications",
+                "format": "toLocaleDateString()"
+            }
+        },
+        "DeclarationDenials": {
+            "declarationRequestType": {
+                "type": "string",
+                "element": "p"
+            },
+            "incidentName": {
+                "type": "string",
+                "element": "h3"
+            },
+            "state": {
+                "type": "string",
+                "element": "p"
+            },
+            "requestedIncidentTypes": {
+                "type": "string",
+                "element": "p"
+            },
+            "declarationRequestDate": {
+                "type": "iso",
+                "element": "p",
+                "label": "Request Date",
+                "format": "toLocaleDateString()"
+            }
+        },
+        "DataSetCodes": {
+            "datasetName": {
+                "type": "string",
+                "element": "p",
+                "label": "Dataset"
+            },
+            "description": {
+                "type": "string",
+                "element": "h3"
+            },
+            "lastRefresh": {
+                "type": "iso",
+                "element": "p",
+                "label": "Last Refresh",
+                "format": "toLocaleDateString() toLocaleTimeString()"
+            },
+            "code": {
+                "type": "string",
+                "element": "p",
+                "label": "Code"
+            }
+        },
+        "DataSetFields": {
+            "openFemaDataSet": {
+                "type": "string",
+                "element": "p",
+                "label": "Dataset"
+            },
+            "title": {
+                "type": "string",
+                "element": "h3"
+            },
+            "description": {
+                "type": "string",
+                "element": "p"
+            },
+            "lastRefresh": {
+                "type": "iso",
+                "element": "p",
+                "label": "Last Refresh",
+                "format": "toLocaleDateString() toLocaleTimeString()"
+            }
         }
     }
 }
