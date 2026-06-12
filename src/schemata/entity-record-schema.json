@@ -1,0 +1,24 @@
+{
+    "entities": {
+        "IpawsArchivedAlerts": {
+            "info[0].headline": {
+                "type": "string",
+                "element": "h3"
+            },
+            "info[0].severity": {
+                "type": "string",
+                "element": "p",
+                "label": "Severity"
+            },
+            "info[0].description": {
+                "type": "html",
+                "element": "div"
+            },
+            "sender": {
+                "type": "string",
+                "element": "p",
+                "label": "Sender"
+            }
+        }
+    }
+}
