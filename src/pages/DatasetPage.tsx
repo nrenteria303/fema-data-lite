@@ -70,10 +70,7 @@ export function DatasetPage() {
 
       {dataset.api && (
         <p style={{ marginBlock: "16px" }}>
-          <Link
-            to={`/records/${dataset.name}`}
-            state={{ dataset }}
-          >
+          <Link to={`/records/${dataset.name}`} state={{ dataset }}>
             View records in {dataset.title}
           </Link>
         </p>
@@ -83,7 +80,9 @@ export function DatasetPage() {
         dangerouslySetInnerHTML={{ __html: dataset.description as string }}
         style={{ marginBottom: "16px" }}
       />
-
+      <a style={{ marginBottom: "16px", display: "block" }} href={dataset.dataDictionary} target="_blank" rel="noreferrer">
+            View Documentation
+      </a>
       {dataset.distribution?.length > 0 && (
         <section>
           <h2>Downloads</h2>

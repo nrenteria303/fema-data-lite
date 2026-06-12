@@ -1,6 +1,8 @@
 import { type OpenFemaDataset } from "../api/types";
 import { Link } from "react-router-dom";
 
+import "./DatasetCard.css"
+
 interface DatasetCardProps {
   dataset: OpenFemaDataset;
 }
@@ -16,12 +18,7 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
         }}
     >
         <article
-            style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "16px",
-                marginBottom: "16px",
-            }}
+            className="dataset-card"
         >
             <h2>{dataset.title}</h2>
 
@@ -39,9 +36,6 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
 
             <p>{dataset.description.slice(0, 250)}...</p>
 
-        {/* <a href={dataset.dataDictionary} target="_blank" rel="noreferrer">
-            View Documentation
-        </a> */}
         </article>
     </Link>
   );
