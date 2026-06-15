@@ -54,3 +54,11 @@ export interface DatasetSearchFilters {
   publisher: string;
   apiOnly: boolean;
 }
+
+export interface SchemaFieldDefinition {
+  type: string;
+  element: string;
+  label?: string;
+  useIfNull?: string;
+  format?: string;
+}

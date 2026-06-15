@@ -3,3 +3,25 @@
     max-width: 960px;
     padding: 1.5rem;
 }
+
+.dataset-detail__description {
+    margin-block: 1rem;
+}
+
+.dataset-page__trunc-btn {
+    text-align: right;
+    padding: 0.125rem;
+    margin-bottom: 1.5rem;
+    margin-top: -0.9375rem;
+    margin-left: auto;
+    display: block;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #00ffff;
+}
+
+.dataset-page__trunc-btn:hover {
+    color: #00d6d6;
+}

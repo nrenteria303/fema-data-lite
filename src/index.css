@@ -102,6 +102,12 @@ h2 {
 p {
   margin: 0;
 }
+a {
+  color: #00ffff;
+}
+a:hover {
+  color: #00d6d6;
+}
 
 code,
 .counter {

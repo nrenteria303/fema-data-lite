@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import type { OpenFemaDataset } from "../../api/types";
+import type { OpenFemaDataset, SchemaFieldDefinition } from "../../api/types";
 import entityRecordSchema from "../../schemata/entity-record-schema.json";
 import { Pagination } from "../../components/Pagination";
 
@@ -9,14 +9,6 @@ import "./RecordsPage.css";
 
 const PAGE_SIZE = 25;
 const BASE_URL = "https://www.fema.gov/api/open";
-
-interface SchemaFieldDefinition {
-  type: string;
-  element: string;
-  label?: string;
-  useIfNull?: string;
-  format?: string;
-}
 
 interface SchemaEntity {
   [fieldPath: string]: SchemaFieldDefinition;
