@@ -25,3 +25,7 @@
 .dataset-page__trunc-btn:hover {
     color: #00d6d6;
 }
+
+.dataset-detail__download-link {
+    word-break: break-all;
+}

@@ -137,7 +137,7 @@ export function DatasetPage() {
             {dataset.distribution.map((item) => (
               <li key={`${item.format}-${item.accessURL}`}>
                 <strong>{item.format}</strong>:{" "}
-                <a href={item.accessURL} target="_blank" rel="noreferrer">
+                <a href={item.accessURL} target="_blank" rel="noreferrer" className="dataset-detail__download-link">
                   {item.accessURL}
                 </a>
               </li>
