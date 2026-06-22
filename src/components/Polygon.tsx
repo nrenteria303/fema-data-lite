@@ -39,7 +39,7 @@ export const Polygon = forwardRef<google.maps.Polygon | null, PolygonProps>(
       return () => {
         polygon.setMap(null);
       };
-    }, [map]);
+    }, [map, options, paths]);
 
     // Synchronize changes to options or paths over time
     useEffect(() => {

@@ -283,9 +283,6 @@ export function RecordsPage() {
   const [error, setError] = useState("");
   const apiKey = import.meta.env.VITE_GMAPS_API_KEY;
 
-  //   const polygonLib = useMapsLibrary('geometry');
-  //   const encoding = polygonLib.
-
   const dataset = useMemo(() => {
     return (location.state as { dataset?: OpenFemaDataset } | null)?.dataset;
   }, [location.state]);
@@ -438,7 +435,7 @@ export function RecordsPage() {
                         <Map
                           style={{ width: "100%", height: "620px" }}
                           defaultCenter={center}
-                          defaultZoom={5}
+                          defaultZoom={4}
                           gestureHandling="greedy"
                           disableDefaultUI
                         >
