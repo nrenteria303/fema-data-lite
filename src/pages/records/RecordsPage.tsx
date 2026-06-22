@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import type { OpenFemaDataset, SchemaFieldDefinition } from "../../api/types";
+import type {
+  OpenFemaDataset,
+  SchemaEntity,
+  SchemaFieldDefinition,
+} from "../../api/types";
 import entityRecordSchema from "../../schemata/entity-record-schema.json";
 import { Pagination } from "../../components/Pagination";
+
+import { APIProvider, Map } from "@vis.gl/react-google-maps";
+import { Polygon } from "../../components/Polygon";
 
 import "./RecordsPage.css";
 
 const PAGE_SIZE = 25;
 const BASE_URL = "https://www.fema.gov/api/open";
 
-interface SchemaEntity {
-  [fieldPath: string]: SchemaFieldDefinition;
-}
+type LatLngLiteral = { lat: number; lng: number };
 
 function getFieldValue(record: Record<string, unknown>, fieldPath: string) {
   const segments = fieldPath.split(".");
@@ -37,7 +42,11 @@ function getFieldValue(record: Record<string, unknown>, fieldPath: string) {
   return current;
 }
 
-function getFieldValueWithFallback(record: Record<string, unknown>, fieldPath: string, fallbackPaths?: string) {
+function getFieldValueWithFallback(
+  record: Record<string, unknown>,
+  fieldPath: string,
+  fallbackPaths?: string,
+) {
   const primaryValue = getFieldValue(record, fieldPath);
 
   if (primaryValue != null && primaryValue !== "") {
@@ -59,7 +68,11 @@ function getFieldValueWithFallback(record: Record<string, unknown>, fieldPath: s
   return primaryValue;
 }
 
-function getPayloadRecords(data: unknown, datasetName?: string, webService?: string) {
+function getPayloadRecords(
+  data: unknown,
+  datasetName?: string,
+  webService?: string,
+) {
   if (Array.isArray(data)) {
     return data;
   }
@@ -94,7 +107,11 @@ function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
     return <div dangerouslySetInnerHTML={{ __html: String(value) }} />;
   }
 
-  if (definition.type === "iso" && typeof value === "string" && definition.format) {
+  if (
+    definition.type === "iso" &&
+    typeof value === "string" &&
+    definition.format
+  ) {
     const date = new Date(value);
 
     if (!Number.isNaN(date.getTime())) {
@@ -105,7 +122,8 @@ function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
 
       const parts = formatters.map((formatter) => {
         const [methodName, ...args] = formatter.split("(");
-        const normalizedArgs = args.join("(")
+        const normalizedArgs = args
+          .join("(")
           .replace(/\)$/, "")
           .split(",")
           .map((arg) => arg.trim())
@@ -126,8 +144,135 @@ function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
     }
   }
 
+  if (Array.isArray(value)) {
+    if (definition.element === "ul") {
+      return (
+        <ul>
+          {value.map((item, itemIndex) => (
+            <li key={itemIndex}>{String(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return <span>{value.map((item) => String(item)).join(", ")}</span>;
+  }
+
   return <span>{String(value)}</span>;
 }
+
+function isLatLngPair(value: unknown): value is [number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    typeof value[0] === "number" &&
+    typeof value[1] === "number"
+  );
+}
+
+function toLatLngLiteral(value: unknown): LatLngLiteral | null {
+  if (!isLatLngPair(value)) {
+    return null;
+  }
+
+  return {
+    lat: value[1],
+    lng: value[0],
+  };
+}
+
+function buildMapRegionPaths(
+  record: Record<string, unknown>,
+  fieldPath: string,
+  definition: SchemaFieldDefinition,
+) {
+  const regionType = getFieldValue(
+    record,
+    definition.polygonOrMultiPolygon ?? `${fieldPath}.type`,
+  );
+  const coordinates = getFieldValue(
+    record,
+    definition.coordinates ?? `${fieldPath}.coordinates`,
+  );
+
+  if (typeof regionType !== "string" || !Array.isArray(coordinates)) {
+    return [] as LatLngLiteral[][];
+  }
+
+  const normalizedType = regionType.trim().toLowerCase();
+  const polygons: LatLngLiteral[][] = [];
+
+  if (normalizedType === "polygon") {
+    for (const ring of coordinates) {
+      if (!Array.isArray(ring)) {
+        continue;
+      }
+
+      const path = ring
+        .map(toLatLngLiteral)
+        .filter((point): point is LatLngLiteral => point !== null);
+
+      if (path.length > 0) {
+        polygons.push(path);
+      }
+    }
+  }
+
+  if (normalizedType === "multipolygon") {
+    for (const polygon of coordinates) {
+      if (!Array.isArray(polygon)) {
+        continue;
+      }
+
+      for (const ring of polygon) {
+        if (!Array.isArray(ring)) {
+          continue;
+        }
+
+        const path = ring
+          .map(toLatLngLiteral)
+          .filter((point): point is LatLngLiteral => point !== null);
+
+        if (path.length > 0) {
+          polygons.push(path);
+        }
+      }
+    }
+  }
+
+  return polygons;
+}
+
+function setCenterPoint(
+  record: Record<string, unknown>,
+  fieldPath: string,
+  definition: SchemaFieldDefinition,
+) {
+    if (!record || !definition) return null;
+    const centerPoint = getFieldValue(
+        record,
+        definition.centerPoint ?? `${fieldPath}.centerPoint`,
+    );
+    console.log("record", record)
+    console.log("cp", centerPoint)
+    if (!centerPoint || centerPoint == undefined) return null;
+    let cpCoordinates;
+    if (Array.isArray(centerPoint)) {
+        cpCoordinates = {
+          lat: centerPoint[1],
+          lng: centerPoint[0],
+        };
+    } else if (typeof centerPoint == "string") {
+        const cpArray = centerPoint.split(",");
+        if (cpArray.length != 2) return null;
+        cpCoordinates = {
+            lat: cpArray[1],
+            lng: cpArray[0]
+        }
+    }
+    console.log("cpCoordinates", cpCoordinates)
+    return cpCoordinates;
+};
 
 export function RecordsPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
@@ -136,6 +281,10 @@ export function RecordsPage() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const apiKey = import.meta.env.VITE_GMAPS_API_KEY;
+
+  //   const polygonLib = useMapsLibrary('geometry');
+  //   const encoding = polygonLib.
 
   const dataset = useMemo(() => {
     return (location.state as { dataset?: OpenFemaDataset } | null)?.dataset;
@@ -167,10 +316,16 @@ export function RecordsPage() {
         }
 
         const data = await response.json();
-        const payload = getPayloadRecords(data, datasetName, dataset?.webService);
+        const payload = getPayloadRecords(
+          data,
+          datasetName,
+          dataset?.webService,
+        );
         setRecords(Array.isArray(payload) ? payload : []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load records.");
+        setError(
+          err instanceof Error ? err.message : "Unable to load records.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -190,14 +345,34 @@ export function RecordsPage() {
 
       {!isLoading && !error && records.length === 0 && <p>No records found.</p>}
 
-      <Pagination currentPage={page} pageSize={PAGE_SIZE} totalItems={1000} onPageChange={setPage} />
+      <Pagination
+        currentPage={page}
+        pageSize={PAGE_SIZE}
+        totalItems={1000}
+        onPageChange={setPage}
+      />
 
       <div style={{ display: "grid", gap: "12px", marginBlock: "20px" }}>
         {records.map((record, index) => (
-          <article key={`${record.id ?? index}`} style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "16px" }}>
+          <article
+            key={`${record.id ?? index}`}
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              padding: "16px",
+            }}
+          >
             {entitySchema &&
               Object.entries(entitySchema).map(([fieldPath, definition]) => {
-                const value = getFieldValueWithFallback(record, fieldPath, definition.useIfNull);
+                if (definition.type === "mapRegion") {
+                  return null;
+                }
+
+                const value = getFieldValueWithFallback(
+                  record,
+                  fieldPath,
+                  definition.useIfNull,
+                );
                 const renderedValue = renderFieldValue(value, definition);
 
                 if (!renderedValue) {
@@ -219,13 +394,80 @@ export function RecordsPage() {
                   return <div key={fieldPath}>{content}</div>;
                 }
 
+                if (definition.element === "ul") {
+                  return (
+                    <div key={fieldPath}>
+                      {definition.label && <strong>{definition.label}:</strong>}
+                      {renderedValue}
+                    </div>
+                  );
+                }
+
                 return <p key={fieldPath}>{content}</p>;
               })}
+
+            {entitySchema &&
+              Object.entries(entitySchema)
+                .filter(([, definition]) => definition.type === "mapRegion")
+                .map(([fieldPath, definition]) => {
+                  const polygons = buildMapRegionPaths(
+                    record,
+                    fieldPath,
+                    definition,
+                  );
+
+                  if (polygons.length === 0 || !apiKey) {
+                    return null;
+                  }
+
+                  const center = setCenterPoint(record, "centerPoint", definition) || polygons[0]?.[0] || { lat: 0, lng: 0 };
+
+                  return (
+                    <div
+                      key={`${fieldPath}-map`}
+                      style={{
+                        width: "100%",
+                        minHeight: 320,
+                        marginTop: 16,
+                        border: "1px solid #ddd",
+                        borderRadius: 8,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <APIProvider apiKey={apiKey}>
+                        <Map
+                          style={{ width: "100%", height: "620px" }}
+                          defaultCenter={center}
+                          defaultZoom={5}
+                          gestureHandling="greedy"
+                          disableDefaultUI
+                        >
+                          {polygons.map((path, polygonIndex) => (
+                            <Polygon
+                              key={polygonIndex}
+                              paths={path}
+                              strokeColor="#1976d2"
+                              strokeOpacity={0.8}
+                              strokeWeight={2}
+                              fillColor="#1976d2"
+                              fillOpacity={0.2}
+                            />
+                          ))}
+                        </Map>
+                      </APIProvider>
+                    </div>
+                  );
+                })}
           </article>
         ))}
       </div>
 
-      <Pagination currentPage={page} pageSize={PAGE_SIZE} totalItems={1000} onPageChange={setPage} />
+      <Pagination
+        currentPage={page}
+        pageSize={PAGE_SIZE}
+        totalItems={1000}
+        onPageChange={setPage}
+      />
     </main>
   );
 }

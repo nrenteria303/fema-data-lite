@@ -224,6 +224,23 @@
                 "label": "Last Refresh",
                 "format": "toLocaleDateString() toLocaleTimeString()"
             }
+        },
+        "FemaRegions": {
+            "name": {
+                "type": "string",
+                "element": "h3"
+            },
+            "states": {
+                "type": "array",
+                "element": "ul",
+                "label": "States"
+            },
+            "regionGeometry": {
+                "type": "mapRegion",
+                "polygonOrMultiPolygon": "regionGeometry.type",
+                "coordinates": "regionGeometry.coordinates",
+                "centerPoint": "loc.coordinates"
+            }
         }
     }
 }

@@ -4,20 +4,23 @@ export interface DatasetDistribution {
   datasetSize: string;
 }
 
-export interface EntitySchemaFieldDefinition {
+export interface SchemaFieldDefinition {
   type: string;
-  element: string;
+  element?: string;
   label?: string;
   useIfNull?: string;
   format?: string;
+  polygonOrMultiPolygon?: string;
+  coordinates?: string;
+  centerPoint?: string
 }
 
-export interface EntitySchema {
-  [fieldPath: string]: EntitySchemaFieldDefinition;
+export interface SchemaEntity {
+  [fieldPath: string]: SchemaFieldDefinition;
 }
 
 export interface EntityRecordSchema {
-  entities: Record<string, EntitySchema>;
+  entities: Record<string, SchemaEntity>;
 }
 
 export interface OpenFemaDataset {
@@ -53,12 +56,4 @@ export interface DatasetSearchFilters {
   theme: string;
   publisher: string;
   apiOnly: boolean;
-}
-
-export interface SchemaFieldDefinition {
-  type: string;
-  element: string;
-  label?: string;
-  useIfNull?: string;
-  format?: string;
 }
