@@ -1,3 +1,54 @@
 h2, h3, h4 {
     margin-block: 0.25rem;
 }
+
+.records-container {
+    position: relative;
+    min-height: 300px;
+    margin-block: 1.25rem;
+}
+
+.records-container--loading .records-list {
+    filter: blur(3px);
+    margin-top: -300px;
+}
+
+.records-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.records-loader {
+    position: sticky;
+    width: 100%;
+    height: 300px;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem
+}
+
+.records-loader span {
+    color: #fff;
+}
+
+.records-loader__anim {
+    width: 140px;
+    height: 12px;
+    --c: #fff 50%, #fff0 0;
+    background:
+        linear-gradient(90deg, var(--c)) 0 0,
+        linear-gradient(-90deg, var(--c)) 0 0;
+    background-size: 20px 100%;
+    background-repeat: repeat-x;
+    animation: l10 1s infinite linear;
+}
+
+@keyframes l10 {
+    100% {
+        background-position: -20px 0, 20px 0
+    }
+}

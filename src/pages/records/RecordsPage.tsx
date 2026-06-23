@@ -253,8 +253,6 @@ function setCenterPoint(
         record,
         definition.centerPoint ?? `${fieldPath}.centerPoint`,
     );
-    console.log("record", record)
-    console.log("cp", centerPoint)
     if (!centerPoint || centerPoint == undefined) return null;
     let cpCoordinates;
     if (Array.isArray(centerPoint)) {
@@ -270,7 +268,6 @@ function setCenterPoint(
             lng: cpArray[0]
         }
     }
-    console.log("cpCoordinates", cpCoordinates)
     return cpCoordinates;
 };
 
@@ -278,15 +275,31 @@ export function RecordsPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
   const location = useLocation();
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
-  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const apiKey = import.meta.env.VITE_GMAPS_API_KEY;
-
+  
   const dataset = useMemo(() => {
     return (location.state as { dataset?: OpenFemaDataset } | null)?.dataset;
   }, [location.state]);
+        
+  const recordCount = dataset?.recordCount;
 
+  const [page, setPage] = useState(1);
+
+  const handlePageChange = (value: number) => {
+    const val = Number(value);
+    if (isNaN(val) || !recordCount) {
+      setPage(1);
+      return;
+    } else {
+      const totalPages = Math.max(1, Math.ceil(recordCount / PAGE_SIZE));
+      if (val < 1) setPage(1);
+      else if (val > totalPages) setPage(totalPages);
+      else setPage(val);
+    }
+  }
+    
   const entitySchema = useMemo(() => {
     const schema = entityRecordSchema.entities as Record<string, SchemaEntity>;
     return schema[datasetName ?? ""];
@@ -331,13 +344,17 @@ export function RecordsPage() {
     fetchRecords();
   }, [datasetName, dataset?.webService, page]);
 
+  const containerClasses = useMemo(() => {
+    let str = "records-container";
+    if (isLoading) str += " records-container--loading";
+    return str;
+  }, [isLoading]);
+
   return (
     <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
       <Link to={`/datasets/${datasetName}`}>Back to dataset</Link>
       <h1>{dataset?.title ?? "Records"}</h1>
       <p>Browsing records from the selected dataset.</p>
-
-      {isLoading && <p>Loading records...</p>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
 
       {!isLoading && !error && records.length === 0 && <p>No records found.</p>}
@@ -345,125 +362,146 @@ export function RecordsPage() {
       <Pagination
         currentPage={page}
         pageSize={PAGE_SIZE}
-        totalItems={1000}
-        onPageChange={setPage}
+        totalItems={recordCount || 0}
+        isLoading={isLoading}
+        inputId="1"
+        onPageChange={handlePageChange}
       />
 
-      <div style={{ display: "grid", gap: "12px", marginBlock: "20px" }}>
-        {records.map((record, index) => (
-          <article
-            key={`${record.id ?? index}`}
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              padding: "16px",
-            }}
-          >
-            {entitySchema &&
-              Object.entries(entitySchema).map(([fieldPath, definition]) => {
-                if (definition.type === "mapRegion") {
-                  return null;
-                }
-
-                const value = getFieldValueWithFallback(
-                  record,
-                  fieldPath,
-                  definition.useIfNull,
-                );
-                const renderedValue = renderFieldValue(value, definition);
-
-                if (!renderedValue) {
-                  return null;
-                }
-
-                const content = (
-                  <>
-                    {definition.label && <strong>{definition.label}: </strong>}
-                    {renderedValue}
-                  </>
-                );
-
-                if (definition.element === "h3") {
-                  return <h3 key={fieldPath}>{content}</h3>;
-                }
-
-                if (definition.element === "div") {
-                  return <div key={fieldPath}>{content}</div>;
-                }
-
-                if (definition.element === "ul") {
-                  return (
-                    <div key={fieldPath}>
-                      {definition.label && <strong>{definition.label}:</strong>}
-                      {renderedValue}
-                    </div>
-                  );
-                }
-
-                return <p key={fieldPath}>{content}</p>;
-              })}
-
-            {entitySchema &&
-              Object.entries(entitySchema)
-                .filter(([, definition]) => definition.type === "mapRegion")
-                .map(([fieldPath, definition]) => {
-                  const polygons = buildMapRegionPaths(
-                    record,
-                    fieldPath,
-                    definition,
-                  );
-
-                  if (polygons.length === 0 || !apiKey) {
+      <section className={containerClasses}>
+        {isLoading && (
+          <div className="records-loader" aria-live="polite">
+            <span>Loading records...</span>
+            <div className="records-loader__anim"></div>
+          </div>
+        )}
+        <div className="records-list">
+          {records.map((record, index) => (
+            <article
+              key={`${record.id ?? index}`}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                padding: "16px",
+              }}
+            >
+              {entitySchema &&
+                Object.entries(entitySchema).map(([fieldPath, definition]) => {
+                  if (definition.type === "mapRegion") {
                     return null;
                   }
 
-                  const center = setCenterPoint(record, "centerPoint", definition) || polygons[0]?.[0] || { lat: 0, lng: 0 };
-
-                  return (
-                    <div
-                      key={`${fieldPath}-map`}
-                      style={{
-                        width: "100%",
-                        minHeight: 320,
-                        marginTop: 16,
-                        border: "1px solid #ddd",
-                        borderRadius: 8,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <APIProvider apiKey={apiKey}>
-                        <Map
-                          style={{ width: "100%", height: "620px" }}
-                          defaultCenter={center}
-                          defaultZoom={4}
-                          gestureHandling="greedy"
-                          disableDefaultUI
-                        >
-                          {polygons.map((path, polygonIndex) => (
-                            <Polygon
-                              key={polygonIndex}
-                              paths={path}
-                              strokeColor="#1976d2"
-                              strokeOpacity={0.8}
-                              strokeWeight={2}
-                              fillColor="#1976d2"
-                              fillOpacity={0.2}
-                            />
-                          ))}
-                        </Map>
-                      </APIProvider>
-                    </div>
+                  const value = getFieldValueWithFallback(
+                    record,
+                    fieldPath,
+                    definition.useIfNull,
                   );
+                  const renderedValue = renderFieldValue(value, definition);
+
+                  if (!renderedValue) {
+                    return null;
+                  }
+
+                  const content = (
+                    <>
+                      {definition.label && (
+                        <strong>{definition.label}: </strong>
+                      )}
+                      {renderedValue}
+                    </>
+                  );
+
+                  if (definition.element === "h3") {
+                    return <h3 key={fieldPath}>{content}</h3>;
+                  }
+
+                  if (definition.element === "div") {
+                    return <div key={fieldPath}>{content}</div>;
+                  }
+
+                  if (definition.element === "ul") {
+                    return (
+                      <div key={fieldPath}>
+                        {definition.label && (
+                          <strong>{definition.label}:</strong>
+                        )}
+                        {renderedValue}
+                      </div>
+                    );
+                  }
+
+                  return <p key={fieldPath}>{content}</p>;
                 })}
-          </article>
-        ))}
-      </div>
+
+              {entitySchema &&
+                Object.entries(entitySchema)
+                  .filter(([, definition]) => definition.type === "mapRegion")
+                  .map(([fieldPath, definition]) => {
+                    const polygons = buildMapRegionPaths(
+                      record,
+                      fieldPath,
+                      definition,
+                    );
+
+                    if (polygons.length === 0 || !apiKey) {
+                      return null;
+                    }
+
+                    const center = setCenterPoint(
+                      record,
+                      "centerPoint",
+                      definition,
+                    ) ||
+                      polygons[0]?.[0] || { lat: 0, lng: 0 };
+
+                    return (
+                      <div
+                        key={`${fieldPath}-map`}
+                        style={{
+                          width: "100%",
+                          minHeight: 320,
+                          marginTop: 16,
+                          border: "1px solid #ddd",
+                          borderRadius: 8,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <APIProvider apiKey={apiKey}>
+                          <Map
+                            style={{ width: "100%", height: "620px" }}
+                            defaultCenter={center}
+                            defaultZoom={4}
+                            gestureHandling="greedy"
+                            disableDefaultUI
+                          >
+                            {polygons.map((path, polygonIndex) => (
+                              <Polygon
+                                key={polygonIndex}
+                                paths={path}
+                                strokeColor="#1976d2"
+                                strokeOpacity={0.8}
+                                strokeWeight={2}
+                                fillColor="#1976d2"
+                                fillOpacity={0.2}
+                              />
+                            ))}
+                          </Map>
+                        </APIProvider>
+                      </div>
+                    );
+                  })}
+            </article>
+          ))}
+        </div>
+      </section>
 
       <Pagination
         currentPage={page}
         pageSize={PAGE_SIZE}
-        totalItems={1000}
-        onPageChange={setPage}
+        totalItems={recordCount || 0}
+        isLoading={isLoading}
+        inputId="2"
+        onPageChange={handlePageChange}
       />
     </main>
   );
