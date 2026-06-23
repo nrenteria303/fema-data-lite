@@ -9,6 +9,20 @@
 
 .pagination-nav button {
     cursor: pointer;
+    border-radius: 4px;
+    border: solid 1px #fef;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    background: oklch(23.082% 0.10613 328.352);
+}
+
+.pagination-nav button:hover:not(:disabled) {
+    background: oklch(38.082% 0.10613 328.352);
+}
+
+.pagination-nav button:disabled {
+    cursor: default;
+    opacity: 0.55;
 }
 
 input.pagination-input {

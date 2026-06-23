@@ -66,7 +66,7 @@ export function Pagination({
           type="number"
           value={localValue}
           onChange={handleChange}
-          disabled={isLoading}
+          disabled={isLoading || totalPages == 1}
           className="pagination-input"
         />
         of {totalPages}

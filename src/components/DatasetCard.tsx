@@ -16,16 +16,18 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
     return Boolean(schema.entities[dataset.name]);
   }, [dataset.name]);
 
+  const cardClassNames = useMemo(() => {
+    const str = "dataset-card";
+    return recordsAvailable ? str + " dataset-card--highlight" : str;
+  }, [recordsAvailable]);
+
   return (
     <Link
       to={`/datasets/${dataset.name}`}
       state={{ dataset }}
-      style={{
-        textDecoration: "none",
-        color: "inherit",
-      }}
+      className="dataset-link"
     >
-      <article className="dataset-card">
+      <article className={cardClassNames}>
         <h2>{dataset.title}</h2>
 
         <p>
@@ -36,8 +38,9 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
           <strong>Records:</strong> {dataset.recordCount?.toLocaleString()}
         </p>
 
-        <p>
-          <strong>Records Available to View:</strong> {recordsAvailable ? "Yes" : "No"}
+        <p className={recordsAvailable ? "blue-text" : ""}>
+          <strong>Records Available to View:</strong>{" "}
+          {recordsAvailable ? "Yes" : "No"}
         </p>
 
         <p>{dataset.description.slice(0, 250)}...</p>

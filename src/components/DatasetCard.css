@@ -1,6 +1,25 @@
+
+.dataset-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.dataset-link:hover .dataset-card {
+    box-shadow: 0px 0px 10px 1px rgba(255,255,255,0.5);
+}
+
 .dataset-card {
+    --highlight-color: oklch(77.312% 0.14768 228.421);
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
+}
+
+.dataset-card--highlight {
+    border: solid 3px var(--highlight-color)
+}
+
+.blue-text {
+    color: var(--highlight-color);
 }
