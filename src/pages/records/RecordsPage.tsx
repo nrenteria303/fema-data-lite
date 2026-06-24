@@ -4,69 +4,26 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import type {
   OpenFemaDataset,
   SchemaEntity,
-  SchemaFieldDefinition,
 } from "../../api/types";
 import entityRecordSchema from "../../schemata/entity-record-schema.json";
 import { Pagination } from "../../components/Pagination";
 
-import { APIProvider, Map } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { Polygon } from "../../components/Polygon";
+
+// Functions used to parse and output data in records results
+import {
+  calculateZoom,
+  setCenterPoint,
+  buildMapRegionPaths,
+  renderFieldValue,
+  getFieldValueWithFallback
+} from "../../utilities/recordsFunctions";
 
 import "./RecordsPage.css";
 
 const PAGE_SIZE = 25;
 const BASE_URL = "https://www.fema.gov/api/open";
-
-type LatLngLiteral = { lat: number; lng: number };
-
-function getFieldValue(record: Record<string, unknown>, fieldPath: string) {
-  const segments = fieldPath.split(".");
-  let current: unknown = record;
-
-  for (const segment of segments) {
-    if (current == null) {
-      return undefined;
-    }
-
-    if (segment.includes("[")) {
-      const [key, indexPart] = segment.split("[");
-      const index = Number(indexPart.replace("]", ""));
-      const container = current as Record<string, unknown>;
-      const collection = container[key] as unknown[] | undefined;
-      current = collection?.[index];
-    } else {
-      current = (current as Record<string, unknown>)[segment];
-    }
-  }
-
-  return current;
-}
-
-function getFieldValueWithFallback(
-  record: Record<string, unknown>,
-  fieldPath: string,
-  fallbackPaths?: string,
-) {
-  const primaryValue = getFieldValue(record, fieldPath);
-
-  if (primaryValue != null && primaryValue !== "") {
-    return primaryValue;
-  }
-
-  if (!fallbackPaths) {
-    return primaryValue;
-  }
-
-  for (const fallbackPath of fallbackPaths.split("|")) {
-    const fallbackValue = getFieldValue(record, fallbackPath.trim());
-
-    if (fallbackValue != null && fallbackValue !== "") {
-      return fallbackValue;
-    }
-  }
-
-  return primaryValue;
-}
 
 function getPayloadRecords(
   data: unknown,
@@ -97,179 +54,6 @@ function getPayloadRecords(
 
   return [];
 }
-
-function renderFieldValue(value: unknown, definition: SchemaFieldDefinition) {
-  if (value == null || value === "") {
-    return null;
-  }
-
-  if (definition.type === "html") {
-    return <div dangerouslySetInnerHTML={{ __html: String(value) }} />;
-  }
-
-  if (
-    definition.type === "iso" &&
-    typeof value === "string" &&
-    definition.format
-  ) {
-    const date = new Date(value);
-
-    if (!Number.isNaN(date.getTime())) {
-      const formatters = definition.format
-        .split(" ")
-        .map((segment) => segment.trim())
-        .filter(Boolean);
-
-      const parts = formatters.map((formatter) => {
-        const [methodName, ...args] = formatter.split("(");
-        const normalizedArgs = args
-          .join("(")
-          .replace(/\)$/, "")
-          .split(",")
-          .map((arg) => arg.trim())
-          .filter(Boolean);
-
-        if (methodName === "toLocaleDateString") {
-          return date.toLocaleDateString(normalizedArgs[0] ?? "en-US");
-        }
-
-        if (methodName === "toLocaleTimeString") {
-          return date.toLocaleTimeString(normalizedArgs[0] ?? "en-US");
-        }
-
-        return "";
-      });
-
-      return <span>{parts.join(" ")}</span>;
-    }
-  }
-
-  if (Array.isArray(value)) {
-    if (definition.element === "ul") {
-      return (
-        <ul>
-          {value.map((item, itemIndex) => (
-            <li key={itemIndex}>{String(item)}</li>
-          ))}
-        </ul>
-      );
-    }
-
-    return <span>{value.map((item) => String(item)).join(", ")}</span>;
-  }
-
-  return <span>{String(value)}</span>;
-}
-
-function isLatLngPair(value: unknown): value is [number, number] {
-  return (
-    Array.isArray(value) &&
-    value.length === 2 &&
-    typeof value[0] === "number" &&
-    typeof value[1] === "number"
-  );
-}
-
-function toLatLngLiteral(value: unknown): LatLngLiteral | null {
-  if (!isLatLngPair(value)) {
-    return null;
-  }
-
-  return {
-    lat: value[1],
-    lng: value[0],
-  };
-}
-
-function buildMapRegionPaths(
-  record: Record<string, unknown>,
-  fieldPath: string,
-  definition: SchemaFieldDefinition,
-) {
-  const regionType = getFieldValue(
-    record,
-    definition.polygonOrMultiPolygon ?? `${fieldPath}.type`,
-  );
-  const coordinates = getFieldValue(
-    record,
-    definition.coordinates ?? `${fieldPath}.coordinates`,
-  );
-
-  if (typeof regionType !== "string" || !Array.isArray(coordinates)) {
-    return [] as LatLngLiteral[][];
-  }
-
-  const normalizedType = regionType.trim().toLowerCase();
-  const polygons: LatLngLiteral[][] = [];
-
-  if (normalizedType === "polygon") {
-    for (const ring of coordinates) {
-      if (!Array.isArray(ring)) {
-        continue;
-      }
-
-      const path = ring
-        .map(toLatLngLiteral)
-        .filter((point): point is LatLngLiteral => point !== null);
-
-      if (path.length > 0) {
-        polygons.push(path);
-      }
-    }
-  }
-
-  if (normalizedType === "multipolygon") {
-    for (const polygon of coordinates) {
-      if (!Array.isArray(polygon)) {
-        continue;
-      }
-
-      for (const ring of polygon) {
-        if (!Array.isArray(ring)) {
-          continue;
-        }
-
-        const path = ring
-          .map(toLatLngLiteral)
-          .filter((point): point is LatLngLiteral => point !== null);
-
-        if (path.length > 0) {
-          polygons.push(path);
-        }
-      }
-    }
-  }
-
-  return polygons;
-}
-
-function setCenterPoint(
-  record: Record<string, unknown>,
-  fieldPath: string,
-  definition: SchemaFieldDefinition,
-) {
-    if (!record || !definition) return null;
-    const centerPoint = getFieldValue(
-        record,
-        definition.centerPoint ?? `${fieldPath}.centerPoint`,
-    );
-    if (!centerPoint || centerPoint == undefined) return null;
-    let cpCoordinates;
-    if (Array.isArray(centerPoint)) {
-        cpCoordinates = {
-          lat: centerPoint[1],
-          lng: centerPoint[0],
-        };
-    } else if (typeof centerPoint == "string") {
-        const cpArray = centerPoint.split(",");
-        if (cpArray.length != 2) return null;
-        cpCoordinates = {
-            lat: cpArray[1],
-            lng: cpArray[0]
-        }
-    }
-    return cpCoordinates;
-};
 
 export function RecordsPage() {
   const { datasetName } = useParams<{ datasetName: string }>();
@@ -443,6 +227,45 @@ export function RecordsPage() {
                       definition,
                     );
 
+                    // If Polygon coordinates in record data are null but a centerPoint exists as a fallback,
+                    // we render centerpoint as an AdvancedMarker
+                    if (
+                      polygons.length === 1 && 
+                      Array.isArray(polygons[0]) && 
+                      polygons[0].length == 1 && 
+                      Array.isArray(polygons[0]) && 
+                      polygons[0][0].lat && 
+                      polygons[0][0].lng
+                    ) {
+                      // console.log("centerPoint polygons value:", polygons)
+                      const centerPoint = polygons[0][0];
+                      const mapId:string = typeof record.id == "string" ? record.id : (Array.isArray(record.id) && typeof record.id[0] == "string") ? record.id[0] : "map-id";
+                      return (
+                        <div
+                          key={`${fieldPath}-map`}
+                          style={{
+                            width: "100%",
+                            minHeight: 320,
+                            marginTop: 16,
+                            border: "1px solid #ddd",
+                            borderRadius: 8,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <APIProvider apiKey={apiKey}>
+                            <Map
+                              style={{ width: "100%", height: "620px" }}
+                              defaultZoom={18}
+                              defaultCenter={centerPoint}
+                              mapId={mapId}
+                            >
+                              <AdvancedMarker position={centerPoint} />
+                            </Map>
+                          </APIProvider>
+                        </div>
+                      );
+                    }
+
                     if (polygons.length === 0 || !apiKey) {
                       return null;
                     }
@@ -453,6 +276,9 @@ export function RecordsPage() {
                       definition,
                     ) ||
                       polygons[0]?.[0] || { lat: 0, lng: 0 };
+                    
+                    const zoomVar: string = definition?.zoomDependentOn ?? "";
+                    const zoomValue = zoomVar && String(zoomVar) ? calculateZoom(Number(record[zoomVar])) : 4;
 
                     return (
                       <div
@@ -470,7 +296,7 @@ export function RecordsPage() {
                           <Map
                             style={{ width: "100%", height: "620px" }}
                             defaultCenter={center}
-                            defaultZoom={4}
+                            defaultZoom={zoomValue}
                             gestureHandling="greedy"
                             disableDefaultUI
                           >

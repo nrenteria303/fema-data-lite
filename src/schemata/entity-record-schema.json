@@ -35,6 +35,12 @@
                 "type": "number",
                 "element": "p",
                 "label": "Area"
+            },
+            "layerGeometry": {
+                "type": "mapRegion",
+                "polygonOrMultiPolygon": "layerGeometry.type",
+                "coordinates": "layerGeometry.coordinates",
+                "zoomDependentOn": "landAreaEntire"
             }
         },
         "NfipCommunityLayerNoOverlapsSplit": {
@@ -52,6 +58,12 @@
                 "type": "number",
                 "element": "p",
                 "label": "Area"
+            },
+            "layerGeometry": {
+                "type": "mapRegion",
+                "polygonOrMultiPolygon": "layerGeometry.type",
+                "coordinates": "layerGeometry.coordinates",
+                "zoomDependentOn": "landAreaEntire"
             }
         },
         "NfipCommunityLayerNoOverlapsWhole": {
@@ -69,6 +81,12 @@
                 "type": "number",
                 "element": "p",
                 "label": "Area"
+            },
+            "layerGeometry": {
+                "type": "mapRegion",
+                "polygonOrMultiPolygon": "layerGeometry.type",
+                "coordinates": "layerGeometry.coordinates",
+                "zoomDependentOn": "landAreaEntire"
             }
         },
         "HmaSubapplicationsCongressionalDistricts": {
@@ -233,13 +251,15 @@
             "states": {
                 "type": "array",
                 "element": "ul",
-                "label": "States"
+                "label": "States",
+                "useIfNull": "state"
             },
             "regionGeometry": {
                 "type": "mapRegion",
                 "polygonOrMultiPolygon": "regionGeometry.type",
                 "coordinates": "regionGeometry.coordinates",
-                "centerPoint": "loc.coordinates"
+                "centerPoint": "loc.coordinates",
+                "useIfNull": "loc.coordinates"
             }
         }
     }
