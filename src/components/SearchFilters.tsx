@@ -25,7 +25,7 @@ export function SearchFilters({
       keyword: "",
       theme: "",
       publisher: "",
-      apiOnly: false,
+      recordsAvailable: false,
     });
   };
 
@@ -92,10 +92,10 @@ export function SearchFilters({
       <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <input
           type="checkbox"
-          checked={filters.apiOnly}
-          onChange={(event) => updateFilter("apiOnly", event.target.checked)}
+          checked={filters.recordsAvailable}
+          onChange={(event) => updateFilter("recordsAvailable", event.target.checked)}
         />
-        <span>Show API-accessible datasets only</span>
+        <span>Show only datasets with records available to view in app</span>
       </label>
     </section>
   );

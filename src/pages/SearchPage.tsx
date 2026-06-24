@@ -3,12 +3,14 @@ import { DatasetCard } from "../components/DatasetCard";
 import { SearchFilters } from "../components/SearchFilters";
 import { type DatasetSearchFilters } from "../api/types";
 import { useDatasets } from "../hooks/useDatasets";
+import { type EntityRecordSchema } from "../api/types";
+import entityRecordSchema from "../schemata/entity-record-schema.json";
 
 const defaultFilters: DatasetSearchFilters = {
   keyword: "",
   theme: "",
   publisher: "",
-  apiOnly: false,
+  recordsAvailable: false,
 };
 
 export function SearchPage() {
@@ -55,9 +57,13 @@ export function SearchPage() {
         !filters.publisher ||
         dataset.publisher?.toLowerCase() === filters.publisher.toLowerCase();
 
-      const matchesApiOnly = !filters.apiOnly || dataset.api === true;
+      const recordsAvailable = () => {
+        const schema = entityRecordSchema as EntityRecordSchema;
+        return Boolean(schema.entities[dataset.name]);
+      };
+      const matchesRecordsAvailable = !filters.recordsAvailable || recordsAvailable();
 
-      return matchesKeyword && matchesTheme && matchesPublisher && matchesApiOnly;
+      return matchesKeyword && matchesTheme && matchesPublisher && matchesRecordsAvailable;
     });
   }, [datasets, filters]);
 
