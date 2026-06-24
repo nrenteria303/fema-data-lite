@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {debounce} from "lodash";
 import "./Pagination.css";
 
@@ -22,7 +22,7 @@ export function Pagination({
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage >= totalPages;
-  const [localValue, setLocalValue] = useState("1");
+  const [localValue, setLocalValue] = useState(currentPage.toString());
 
   const debouncedHandler = useMemo(
     () =>
@@ -30,12 +30,22 @@ export function Pagination({
         const num = Number(value);
         onPageChange(num);
       }, 1500),
-    [],
+    [onPageChange],
   );
 
   useEffect(() => {
     return () => debouncedHandler.cancel();
   }, [debouncedHandler]);
+
+  // Keep local input value synchronized when the current page or total pages change
+  const isInputFocused = useRef(false);
+
+  useEffect(() => {
+    if (isInputFocused.current) return;
+
+    const newVal = currentPage.toString();
+    setLocalValue((prev) => (prev !== newVal ? newVal : prev));
+  }, [currentPage, totalPages]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseInt(e.target.value);
@@ -66,6 +76,12 @@ export function Pagination({
           type="number"
           value={localValue}
           onChange={handleChange}
+          onFocus={() => (isInputFocused.current = true)}
+          onBlur={() => {
+            isInputFocused.current = false;
+            debouncedHandler.flush();
+            setLocalValue(currentPage.toString());
+          }}
           disabled={isLoading || totalPages == 1}
           className="pagination-input"
         />
