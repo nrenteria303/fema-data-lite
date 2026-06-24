@@ -32,9 +32,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
+    --text: #b0b6c0;
     --text-h: #f3f4f6;
-    --bg: #16171d;
+    --bg: #121527;
     --border: #2e303a;
     --code-bg: #1f2028;
     --accent: #c084fc;
@@ -107,6 +107,13 @@ a {
 }
 a:hover {
   color: #00d6d6;
+}
+
+input, 
+select,
+textarea {
+  font-size: 1rem;
+  padding: 0.375rem 0.5rem;
 }
 
 code,

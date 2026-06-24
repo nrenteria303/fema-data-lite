@@ -12,7 +12,8 @@ export interface SchemaFieldDefinition {
   format?: string;
   polygonOrMultiPolygon?: string;
   coordinates?: string;
-  centerPoint?: string
+  centerPoint?: string;
+  zoomDependentOn?: string
 }
 
 export interface SchemaEntity {
@@ -55,5 +56,5 @@ export interface DatasetSearchFilters {
   keyword: string;
   theme: string;
   publisher: string;
-  apiOnly: boolean;
+  recordsAvailable: boolean;
 }
